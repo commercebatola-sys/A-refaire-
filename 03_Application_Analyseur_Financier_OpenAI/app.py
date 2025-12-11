@@ -128,27 +128,7 @@ def generate_summary(text, model="gpt-4o-mini"):
     
     # Consignes pour le modèle
     instructions = (
-        "Tu es analyste financier. On te fournit le texte d'un document financier "
-        "(rapport annuel, trimestriel, comptes, bilan, annexes).\n\n"
-        "Produis une synthèse **précise et chiffrée** en Markdown selon ce cadre :\n\n"
-        "- **Société / Période / Devise** : (si repérable)\n"
-        "- **Résumé exécutif (5–8 lignes)** : activité, faits marquants, contexte\n"
-        "- **Chiffres clés** (tableau) :\n"
-        " | Indicateur | Valeur | Évolution/Contexte | Période | Page |\n"
-        " |---|---:|---|---|---:|\n"
-        " (exemples : Chiffre d'affaires, EBIT/EBITDA, Résultat net, Marge, FCF, CAPEX, "
-        "Dette nette, Trésorerie, NPL/Coût du risque pour banque, CET1, LCR/NSFR, etc.)\n"
-        "- **Analyse** :\n"
-        " - Performance (croissance, marges, cash)\n"
-        " - Structure financière (dette, liquidité)\n"
-        " - Risques & incertitudes (marché, réglementation, change)\n"
-        " - Outlook / Guidance (si communiqué)\n"
-        "- **Références internes** : pages/sections à relire\n\n"
-        "Exigences :\n"
-        "- **N'invente aucun chiffre**. Si une valeur n'apparaît pas clairement : `non précisé`.\n"
-        "- Cite la **Page** d'origine quand c'est possible (repère `=== [PAGE X] ===`).\n"
-        "- 6 à 12 **indicateurs quantitatifs** maximum (les plus utiles).\n"
-        "- Reste concis : 200–350 mots hors tableau."
+        
     )
     
     try:
@@ -171,7 +151,32 @@ def generate_summary(text, model="gpt-4o-mini"):
         return None
 
 # Fonction pour répondre aux questions
-def answer_question(text, question, model="gpt-4o"):
+d"Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
+"On te fournit le texte d'un document financier (rapport annuel, trimestriel, comptes, bilan, annexes).\n\n"
+"Produis une synthèse professionnelle, structurée et exploitable en Markdown selon ce cadre :\n\n"
+
+"- **Société / Période / Devise** : (si repérable)\n"
+"- **Résumé exécutif (5–8 lignes)** : activité, faits marquants, contexte\n"
+"- **Chiffres clés** (tableau) :\n"
+" | Indicateur | Valeur | Évolution/Contexte | Période | Page |\n"
+" |---|---:|---|---|---:|\n"
+" (exemples : Chiffre d'affaires, EBIT/EBITDA, Résultat net, Marge, FCF, CAPEX, Dette nette, "
+"Trésorerie, NPL/Coût du risque pour banque, CET1, LCR/NSFR, etc.)\n"
+
+"- **Analyse** :\n"
+" - Performance (croissance, marges, cash)\n"
+" - Structure financière (dette, liquidité)\n"
+" - Risques & incertitudes (marché, réglementation, change)\n"
+" - Outlook / Guidance (si communiqué)\n"
+"- **Références internes** : pages/sections à relire\n\n"
+
+"Exigences :\n"
+"- **N'invente aucun chiffre**. Si une valeur n'apparaît pas clairement : `non précisé`.\n"
+"- Cite la **Page** d'origine quand c'est possible (repère `=== [PAGE X] ===`).\n"
+"- Limite le tableau à **6–12 indicateurs clés**.\n"
+"- Reste concis : 200–350 mots hors tableau.\n"
+"- Si le document est incomplet ou vague, complète la synthèse avec une analyse stratégique générale, "
+"tout en distinguant clairement ce qui provient du document et ce qui relève de ton expertise professionnelle."ef answer_question(text, question, model="gpt-4o"):
     """Répond à une question spécifique sur le contenu du PDF"""
     
     # Récupérer la clé API depuis la session
@@ -181,11 +186,14 @@ def answer_question(text, question, model="gpt-4o"):
         return None
     
     instructions = (
-        "Tu es analyste financier. On te donne un extrait de rapport financier. "
-        "Réponds uniquement à la question posée, sans inventer de données. "
-        "Si la réponse n'est pas claire dans le texte, écris : 'non précisé'. "
-        "Quand c'est possible, indique aussi la page d'origine (repère '=== [PAGE X] ===')."
-    )
+        "Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
+"On te donne un extrait de rapport financier. "
+"Si la question concerne le document, réponds uniquement sur la base du texte fourni, sans inventer de données. "
+"Si l'information n'apparaît pas clairement dans le texte, écris : 'non précisé'. "
+"Quand c'est possible, indique aussi la page d'origine (repère '=== [PAGE X] ==='). "
+"Si la question ne concerne PAS directement le document (ex : business, croissance, stratégie, développement), "
+"réponds en utilisant tes connaissances générales d'expert, avec des conseils clairs, précis et actionnables. "
+"Dans tous les cas, sois professionnel, direct et structuré."
     
     try:
         client = OpenAI(api_key=api_key)
