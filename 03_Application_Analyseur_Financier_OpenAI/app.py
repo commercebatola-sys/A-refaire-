@@ -151,7 +151,7 @@ def generate_summary(text, model="gpt-4o-mini"):
         return None
 
 # Fonction pour répondre aux questions
-d"Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
+"Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
 "On te fournit le texte d'un document financier (rapport annuel, trimestriel, comptes, bilan, annexes).\n\n"
 "Produis une synthèse professionnelle, structurée et exploitable en Markdown selon ce cadre :\n\n"
 
