@@ -22,10 +22,7 @@ st.markdown("Transformez vos rapports financiers en résumés structurés grâce
 with st.sidebar:
     st.header("⚙️ Configuration")
 
-
     # Chargement des variables d'environnement
-    # Chercher et charger le .env (remonte les dossiers si besoin)
-    from dotenv import find_dotenv
     env_path = find_dotenv(filename=".env", usecwd=True)
     load_dotenv(dotenv_path=env_path, override=True)
     
@@ -81,6 +78,7 @@ with st.sidebar:
     st.markdown("2. Obtenez un résumé structuré")
     st.markdown("3. Posez des questions spécifiques")
 
+
 # Fonction pour extraire le texte du PDF
 def extract_pdf_text(pdf_file, max_length=120000):
     """Extrait le texte d'un PDF avec repères de pages"""
@@ -116,24 +114,28 @@ def extract_pdf_text(pdf_file, max_length=120000):
         st.error(f"❌ Erreur lors de la lecture du PDF: {str(e)}")
         return None, 0
 
+
 # Fonction pour générer le résumé
 def generate_summary(text, model="gpt-4o-mini"):
     """Génère un résumé financier structuré"""
     
-    # Récupérer la clé API depuis la session
     api_key = st.session_state.get('openai_api_key')
     if not api_key:
         st.error("❌ Clé API non configurée")
         return None
     
-    # Consignes pour le modèle
     instructions = (
-        
+        "Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
+        "Ton rôle est de transformer un document financier en résumé précis et chiffré, "
+        "en respectant strictement les chiffres du document. "
+        "Si l'information est absente, indique 'non précisé'. "
+        "Fournis : résumé exécutif, tableau de chiffres clés, analyse des performances, structure financière, risques et guidance. "
+        "Reste clair, structuré, concis et professionnel. "
+        "Ne jamais inventer de données. Citer les pages quand possible."
     )
     
     try:
         client = OpenAI(api_key=api_key)
-        
         response = client.chat.completions.create(
             model=model,
             messages=[
@@ -143,51 +145,16 @@ def generate_summary(text, model="gpt-4o-mini"):
             max_tokens=2000,
             temperature=0.1
         )
-        
         return response.choices[0].message.content
-        
     except Exception as e:
         st.error(f"❌ Erreur lors de la génération du résumé: {str(e)}")
         return None
 
-# Fonction pour répondre aux questions
-"Tu es un assistant IA complet. Si la question concerne un document, active le Mode Analyste. "
-"Produis des résumés, tableaux chiffrés, analyses et références de pages. "
-"Si la question n'est pas liée au document, active le Mode Coach business ou le Mode Assistant créatif : "
-"- fournir des stratégies business "
-"- créer des plans d'action "
-"- proposer des méthodes concrètes "
-"- générer des idées ou solutions "
-"- toujours fournir une réponse adaptée. "
-"Pour les documents financiers, ton analyse doit respecter ce cadre en Markdown :\n\n"
-"- Société / Période / Devise (si repérable)\n"
-"- Résumé exécutif (5–8 lignes) : activité, faits marquants, contexte\n"
-"- Chiffres clés (tableau) :\n"
-" | Indicateur | Valeur | Contexte/Évolution | Période | Page |\n"
-" |---|---:|---|---|---:|\n"
-"(exemples : Chiffre d'affaires, EBIT/EBITDA, Résultat net, Marge, FCF, CAPEX, Dette nette, Trésorerie, NPL/Coût du risque, CET1, LCR/NSFR, etc.)\n"
-"- Analyse :\n"
-" - Performance (croissance, marges, cash)\n"
-" - Structure financière (dette, liquidité)\n"
-" - Risques et incertitudes (marché, réglementation, change)\n"
-" - Outlook / Guidance (si communiqué)\n"
-"- Références internes : pages/sections importantes\n\n"
-"Exigences strictes :\n"
-"- Ne jamais inventer de chiffre. Si une valeur est absente : 'non précisé'.\n"
-"- Citer la page d'origine si possible (=== [PAGE X] ===).\n"
-"- 6 à 12 indicateurs quantitatifs maximum.\n"
-"- Rester clair, concis et professionnel (200–350 mots hors tableau)."
 
-"Exigences :\n"
-"- **N'invente aucun chiffre**. Si une valeur n'apparaît pas clairement : `non précisé`.\n"
-"- Cite la **Page** d'origine quand c'est possible (repère `=== [PAGE X] ===`).\n"
-"- Limite le tableau à **6–12 indicateurs clés**.\n"
-"- Reste concis : 200–350 mots hors tableau.\n"
-"- Si le document est incomplet ou vague, complète la synthèse avec une analyse stratégique générale, "
-"tout en distinguant clairement ce qui provient du document et ce qui relève de ton expertise professionnelle."ef answer_question(text, question, model="gpt-4o"):
+# Fonction pour répondre aux questions
+def answer_question(text, question, model="gpt-4o"):
     """Répond à une question spécifique sur le contenu du PDF"""
     
-    # Récupérer la clé API depuis la session
     api_key = st.session_state.get('openai_api_key')
     if not api_key:
         st.error("❌ Clé API non configurée")
@@ -195,17 +162,19 @@ def generate_summary(text, model="gpt-4o-mini"):
     
     instructions = (
         "Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
-"On te donne un extrait de rapport financier. "
-"Si la question concerne le document, réponds uniquement sur la base du texte fourni, sans inventer de données. "
-"Si l'information n'apparaît pas clairement dans le texte, écris : 'non précisé'. "
-"Quand c'est possible, indique aussi la page d'origine (repère '=== [PAGE X] ==='). "
-"Si la question ne concerne PAS directement le document (ex : business, croissance, stratégie, développement), "
-"réponds en utilisant tes connaissances générales d'expert, avec des conseils clairs, précis et actionnables. "
-"Dans tous les cas, sois professionnel, direct et structuré."
+        "Tu fonctionnes automatiquement en 4 modes : "
+        "1) Analyste de documents, 2) Coach business & finance, 3) Assistant créatif, 4) Chat IA normal. "
+        "Mode Analyste : lire le texte fourni, extraire les chiffres clés (CA, marge, bénéfice net, dettes, cashflow), "
+        "identifier risques, objectifs et stratégie, ne jamais inventer de données, si l'information n'existe pas : 'non précisé', "
+        "citer les pages si possible (=== [PAGE X] ===). "
+        "Mode Coach/Créatif : fournir stratégies, plans d'action, méthodes concrètes, idées, réponses actionnables même hors-document. "
+        "Mode Chat : répondre normalement, garder le contexte et s'adapter au niveau de l'utilisateur. "
+        "Réponds toujours clairement, professionnellement, de manière concise et structurée, "
+        "en distinguant ce qui provient du document et ce qui relève de ton expertise."
+    )
     
     try:
         client = OpenAI(api_key=api_key)
-        
         response = client.chat.completions.create(
             model=model,
             messages=[
@@ -215,22 +184,18 @@ def generate_summary(text, model="gpt-4o-mini"):
             max_tokens=1000,
             temperature=0.1
         )
-        
         return response.choices[0].message.content
-        
     except Exception as e:
         st.error(f"❌ Erreur lors de la réponse à la question: {str(e)}")
         return None
 
+
 # Interface principale
 def main():
-    # Onglets pour organiser l'interface
     tab1, tab2 = st.tabs(["📄 Upload & Analyse", "❓ Questions"])
     
     with tab1:
         st.header("📄 Upload et Analyse du PDF")
-        
-        # Upload du fichier
         uploaded_file = st.file_uploader(
             "Choisissez votre document financier (PDF)",
             type=['pdf'],
@@ -238,7 +203,6 @@ def main():
         )
         
         if uploaded_file is not None:
-            # Informations sur le fichier
             file_details = {
                 "Nom du fichier": uploaded_file.name,
                 "Taille": f"{uploaded_file.size / 1024:.1f} KB",
@@ -246,34 +210,24 @@ def main():
             }
             st.json(file_details)
             
-            # Bouton pour analyser
             if st.button("🚀 Analyser le document", type="primary"):
                 with st.spinner("📖 Extraction du texte en cours..."):
                     text, text_length = extract_pdf_text(uploaded_file, max_length)
                 
                 if text:
                     st.success(f"✅ Texte extrait : {text_length} caractères")
-                    
-                    # Aperçu du texte
                     with st.expander("👁️ Aperçu du texte extrait"):
                         st.text(text[:1000] + "..." if len(text) > 1000 else text)
                     
-                    # Génération du résumé
                     with st.spinner("🤖 Génération du résumé en cours..."):
                         summary = generate_summary(text, model)
                     
                     if summary:
                         st.success("✅ Résumé généré avec succès !")
-                        
-                        # Affichage du résumé
                         st.subheader("📊 Résumé Financier")
                         st.markdown(summary)
-                        
-                        # Stockage en session pour les questions
                         st.session_state['pdf_text'] = text
                         st.session_state['summary'] = summary
-                        
-                        # Téléchargement du résumé
                         st.download_button(
                             label="💾 Télécharger le résumé (Markdown)",
                             data=summary,
@@ -287,23 +241,18 @@ def main():
     
     with tab2:
         st.header("❓ Questions sur le Document")
-        
         if 'pdf_text' not in st.session_state:
             st.info("ℹ️ Veuillez d'abord analyser un document dans l'onglet 'Upload & Analyse'")
         else:
             st.success("✅ Document chargé et prêt pour les questions")
-            
-            # Interface de questions
             question = st.text_input(
                 "Posez votre question sur le document :",
                 placeholder="Ex: Quel est le chiffre d'affaires ? Quelle est la marge nette ?"
             )
-            
             if question:
                 if st.button("🔍 Rechercher la réponse", type="primary"):
                     with st.spinner("🤖 Recherche en cours..."):
                         answer = answer_question(st.session_state['pdf_text'], question, model)
-                    
                     if answer:
                         st.success("✅ Réponse trouvée !")
                         st.markdown("**Question :** " + question)
@@ -312,7 +261,6 @@ def main():
                     else:
                         st.error("❌ Échec de la recherche de réponse")
             
-            # Questions suggérées
             st.subheader("💡 Questions suggérées")
             suggested_questions = [
                 "Quel est le chiffre d'affaires ?",
@@ -321,12 +269,10 @@ def main():
                 "Quelle est la dette nette ?",
                 "Quel est le cash flow opérationnel ?"
             ]
-            
             for i, suggested_q in enumerate(suggested_questions):
                 if st.button(f"❓ {suggested_q}", key=f"suggested_{i}"):
                     with st.spinner("🤖 Recherche en cours..."):
                         answer = answer_question(st.session_state['pdf_text'], suggested_q, model)
-                    
                     if answer:
                         st.success("✅ Réponse trouvée !")
                         st.markdown("**Question :** " + suggested_q)
@@ -335,12 +281,14 @@ def main():
                     else:
                         st.error("❌ Échec de la recherche de réponse")
 
+
 # Footer
 st.markdown("---")
 st.markdown(
     "**Note importante :** Vérifiez toujours les chiffres affichés et leurs pages d'origine. "
     "En cas d'ambiguïté dans le PDF, utilisez 'non précisé' et confirmez dans le document source."
 )
+
 
 if __name__ == "__main__":
     main()
