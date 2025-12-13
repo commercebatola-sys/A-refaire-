@@ -4,7 +4,6 @@ import fitz  # PyMuPDF
 from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
 import tempfile
-import pathlib
 
 # Configuration de la page
 st.set_page_config(
@@ -83,31 +82,22 @@ with st.sidebar:
 def extract_pdf_text(pdf_file, max_length=120000):
     """Extrait le texte d'un PDF avec repères de pages"""
     try:
-        # Créer un fichier temporaire
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
             tmp_file.write(pdf_file.read())
             tmp_path = tmp_file.name
         
-        # Ouvrir le PDF avec PyMuPDF
         pdf = fitz.open(tmp_path)
-        
-        # Extraire le texte page par page
         text = ""
         for i, page in enumerate(pdf, start=1):
             page_text = page.get_text()
             text += f"\n\n=== [PAGE {i}] ===\n" + page_text.strip()
         
-        # Nettoyer le texte
         text = "\n".join(line.strip() for line in text.splitlines())
-        
-        # Limiter la longueur si nécessaire
         if len(text) > max_length:
             text = text[:max_length]
             st.warning(f"⚠️ Le texte a été tronqué à {max_length} caractères pour éviter les dépassements d'API")
         
-        # Nettoyer le fichier temporaire
         os.unlink(tmp_path)
-        
         return text, len(text)
         
     except Exception as e:
@@ -115,35 +105,27 @@ def extract_pdf_text(pdf_file, max_length=120000):
         return None, 0
 
 
-# Fonction pour générer le résumé
+# Fonction pour générer le résumé avec mode Audit
 def generate_summary(text, model="gpt-4o-mini"):
-    """Génère un résumé financier structuré"""
-    
     api_key = st.session_state.get('openai_api_key')
     if not api_key:
         st.error("❌ Clé API non configurée")
         return None
     
     instructions = (
-        "Tu es un analyste financier et expert-comptable. "
-        "Ton rôle est double :\n"
-        "1️⃣ Analyste : extraire les chiffres clairs du document.\n"
-        "2️⃣ Expert-Comptable : calculer ou dériver les chiffres si non explicitement indiqués.\n\n"
-        "Produis un résumé **précis et chiffré** en Markdown :\n"
-        "- Société / Période / Devise : si repérable\n"
-        "- Résumé exécutif (5–8 lignes)\n"
-        "- Chiffres clés (tableau) :\n"
-        " | Indicateur | Valeur | Statut | Méthode / Contexte | Période | Page |\n"
-        " |---|---:|---|---|---|---:|\n"
-        " (ex : CA, EBITDA, Résultat net, Marge, FCF, CAPEX, Dette nette, Trésorerie, NPL, CET1, LCR, NSFR)\n"
-        "- Analyse : performance, structure financière, risques, guidance\n"
-        "- Références internes : pages/sections à relire\n\n"
-        "Exigences :\n"
-        "- 🟢 Chiffre direct du PDF, 🟠 Chiffre calculé, 🔴 non précisé si absent\n"
-        "- Cite la page d'origine quand possible (=== [PAGE X] ===)\n"
-        "- 6 à 12 indicateurs quantitatifs maximum\n"
-        "- 200–350 mots hors tableau\n"
-        "- Explique brièvement toute hypothèse de calcul dans le tableau"
+        "Tu es un assistant IA hybride : analyste financier, consultant business, expert stratégique et auditeur financier. "
+        "Ton rôle est de transformer un document financier en résumé précis et chiffré. "
+        "Si l'information est absente, indique 'non précisé'. "
+        "Fournis : résumé exécutif, tableau de chiffres clés, analyse des performances, structure financière, risques et guidance. "
+        "Après avoir généré le résumé, ajoute une section '🔎 Audit & Alertes de cohérence' qui :\n"
+        "- signale toute incohérence ou point à surveiller entre les chiffres (CA, marge, résultat net, dette, cashflow)\n"
+        "- compare l'évolution des chiffres et le discours stratégique\n"
+        "- évalue la crédibilité des ratios et chiffres\n"
+        "- reste neutre, factuel et professionnel\n"
+        "- cite les pages si possible\n"
+        "- n’invente jamais rien\n"
+        "- explique pourquoi il y a une alerte\n"
+        "- conclut sur la cohérence globale : satisfaisante / moyenne / fragile"
     )
     
     try:
@@ -163,25 +145,34 @@ def generate_summary(text, model="gpt-4o-mini"):
         return None
 
 
-# Fonction pour répondre aux questions
+# Fonction pour répondre aux questions avec mode Audit automatique
 def answer_question(text, question, model="gpt-4o"):
-    """Répond à une question spécifique sur le contenu du PDF"""
-    
     api_key = st.session_state.get('openai_api_key')
     if not api_key:
         st.error("❌ Clé API non configurée")
         return None
-    
+
     instructions = (
-        "Tu es analyste financier et expert-comptable. "
-        "Réponds à la question posée :\n"
-        "- Si le chiffre est clairement présent dans le texte, extrais-le (🟢).\n"
-        "- Si le chiffre doit être calculé ou dérivé, fais le calcul et explique la méthode (🟠).\n"
-        "- Si l'information est absente ou floue, indique 'non précisé' (🔴).\n"
-        "- Cite la page d'origine si possible (=== [PAGE X] ===).\n"
-        "- Réponds professionnellement, de manière concise et structurée."
+        "Tu es un assistant IA hybride : analyste financier, consultant business et expert stratégique. "
+        "Tu fonctionnes automatiquement en 4 modes : "
+        "1) Analyste de documents, 2) Coach business & finance, 3) Assistant créatif, 4) Chat IA normal. "
+        "Mode Analyste : lire le texte fourni, extraire les chiffres clés (CA, marge, bénéfice net, dettes, cashflow), "
+        "identifier risques, objectifs et stratégie, ne jamais inventer de données, si l'information n'existe pas : 'non précisé', "
+        "citer les pages si possible (=== [PAGE X] ===). "
+        "Mode Coach/Créatif : fournir stratégies, plans d'action, méthodes concrètes, idées, réponses actionnables même hors-document. "
+        "Mode Chat : répondre normalement, garder le contexte et s'adapter au niveau de l'utilisateur. "
+        "Réponds toujours clairement, professionnellement, de manière concise et structurée, "
+        "en distinguant ce qui provient du document et ce qui relève de ton expertise."
     )
-    
+
+    # Détecte automatiquement si la question nécessite un Audit
+    audit_keywords = ["performance", "rentabilité", "évolution", "risques", "solidité financière"]
+    if any(keyword in question.lower() for keyword in audit_keywords):
+        instructions += (
+            "\nApplique le mode Audit : ajoute les alertes et points à surveiller dans une section '🔎 Audit & Alertes de cohérence', "
+            "en restant factuel, neutre et professionnel."
+        )
+
     try:
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
