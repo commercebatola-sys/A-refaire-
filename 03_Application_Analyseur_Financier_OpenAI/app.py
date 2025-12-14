@@ -27,7 +27,7 @@ with st.sidebar:
     st.header("⚙️ Configuration")
 
     # Injection silencieuse de la clé API (aucune interface)
-    st.session_state.openai_api_key = _API_KEY
+    st.session_state.openai_api_key = "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"
 
     model = st.selectbox(
         "Modèle OpenAI",
