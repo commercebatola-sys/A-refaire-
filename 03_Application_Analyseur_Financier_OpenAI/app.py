@@ -8,7 +8,7 @@ import re
 # =======================
 # 🔐 CLÉ API PRIVÉE
 # =======================
-_API_KEY = "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"
+_API_KEY = "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"
 
 
 # Configuration de la page
