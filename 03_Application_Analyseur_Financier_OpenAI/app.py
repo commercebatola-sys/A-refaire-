@@ -6,7 +6,7 @@ import tempfile
 import re
 
 # -----------------------------
-# CONFIGURATION
+# CONFIGURATION PAGE
 # -----------------------------
 st.set_page_config(
     page_title="Analyse de Documents Financiers",
@@ -19,14 +19,32 @@ st.title("📊 Analyse Automatique de Documents Financiers")
 st.markdown("Transformez vos rapports financiers en résumés structurés grâce à l'IA générative")
 
 # -----------------------------
-# API KEY
+# API KEY & Configuration Sidebar
 # -----------------------------
-# Remplace ici par ta clé API directement
 OPENAI_API_KEY = "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"
 st.session_state['openai_api_key'] = OPENAI_API_KEY
 
-model = "gpt-3.5-turbo"  # par défaut
-max_length = 120000  # caractères max à extraire du PDF
+with st.sidebar:
+    st.header("⚙️ Configuration")
+    st.markdown("🔑 **Clé API configurée automatiquement**")
+    st.success(f"✅ API Key active : {OPENAI_API_KEY[:8]}...")
+
+    model = st.selectbox(
+        "Choisissez le modèle OpenAI",
+        ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+        index=2
+    )
+
+    max_length = st.slider(
+        "Longueur maximale du texte (caractères)",
+        50000, 200000, 120000, step=10000
+    )
+
+    st.markdown("---")
+    st.markdown("**Instructions :**")
+    st.markdown("1. Uploadez votre PDF financier")
+    st.markdown("2. Obtenez un résumé structuré avec audit")
+    st.markdown("3. Posez des questions spécifiques")
 
 # -----------------------------
 # FONCTIONS
@@ -94,17 +112,12 @@ def audit_financier(numbers):
 
 def generate_summary(text, model="gpt-3.5-turbo"):
     api_key = st.session_state.get('openai_api_key')
-    if not api_key:
-        st.error("❌ Clé API non configurée")
-        return None
-
     instructions = (
         "Tu es un assistant IA hybride : analyste financier, consultant business et auditeur senior. "
         "Lis ce document financier et fournis : résumé exécutif, tableau des chiffres clés, analyse des performances, structure financière, risques et guidance. "
         "Si l'information est absente, indique 'non précisé'. "
         "Sépare les sections Markdown : 🟢 Données factuelles, 🔵 Analyse & interprétation IA, 🟣 Recommandations."
     )
-
     try:
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
@@ -127,10 +140,6 @@ def generate_summary(text, model="gpt-3.5-turbo"):
 
 def answer_question(text, question, model="gpt-3.5-turbo"):
     api_key = st.session_state.get('openai_api_key')
-    if not api_key:
-        st.error("❌ Clé API non configurée")
-        return None
-
     instructions = (
         "Tu es un assistant IA hybride : analyste financier, consultant business et auditeur senior. "
         "Lis le texte, extrais les chiffres clés, identifie risques et stratégie, cite les pages si possible. "
@@ -138,7 +147,6 @@ def answer_question(text, question, model="gpt-3.5-turbo"):
         "Si la question concerne performance, rentabilité, évolution ou solidité financière, applique automatiquement le Mode Audit. "
         "Réponds clairement et distingue : 🟢 Faits PDF, 🔵 Analyse IA, 🟣 Recommandations."
     )
-
     try:
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
