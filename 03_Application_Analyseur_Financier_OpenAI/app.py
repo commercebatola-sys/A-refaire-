@@ -21,7 +21,7 @@ st.markdown("Transformez vos rapports financiers en résumés structurés grâce
 # -----------------------------
 # API KEY & Configuration Sidebar
 # -----------------------------
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
 st.session_state['openai_api_key'] = OPENAI_API_KEY
 
 with st.sidebar:
