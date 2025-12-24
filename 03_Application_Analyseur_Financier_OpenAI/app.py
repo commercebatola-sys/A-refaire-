@@ -33,12 +33,12 @@ with st.sidebar:
     st.markdown("🔑 Clé API configurée automatiquement")
     st.success(f"✅ API Key active : {GEMINI_API_KEY[:8]}...")
 
+    # ✅ Liste de modèles corrigée pour éviter l'erreur 404
     model = st.selectbox(
         "Choisissez le modèle Gemini",
         [
-            "gemini-1.5-flash",
             "gemini-1.5-pro",
-            "gemini-1.0-pro"
+            "gemini-1.5-flash"
         ],
         index=0
     )
@@ -98,7 +98,7 @@ def extract_numbers(text):
 
     for page_num, page_text in pages:
         for key in numbers.keys():
-            pattern = rf"{key}[:\s]*([\d\s,.]+(?:M|k|K)?)"
+            pattern = rf"{key}[:\s]([\d\s,.]+(?:M|k|K)?)"
             for match in re.findall(pattern, page_text, re.IGNORECASE):
                 value = match.replace(" ", "").replace(",", ".")
                 numbers[key].append((value, page_num))
@@ -202,7 +202,7 @@ def main():
 
         if uploaded_file:
             if st.button("🚀 Analyser le document"):
-                text, _ = extract_pdf_text(uploaded_file, max_length)
+                text, text_length = extract_pdf_text(uploaded_file, max_length)
 
                 if text:
                     summary = generate_summary(text, model)
