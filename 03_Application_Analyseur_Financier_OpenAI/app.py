@@ -48,10 +48,10 @@ with st.sidebar:
     st.markdown("3. Posez des questions spécifiques")
 
 # -----------------------------
-# GEMINI REST CALL (STABLE)
+# GEMINI REST CALL (CORRIGÉ)
 # -----------------------------
 def call_gemini(prompt, model):
-    url = f"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
 
     payload = {
         "contents": [
@@ -66,11 +66,12 @@ def call_gemini(prompt, model):
     response = requests.post(
         url,
         headers={"Content-Type": "application/json"},
-        data=json.dumps(payload)
+        data=json.dumps(payload),
+        timeout=60
     )
 
     if response.status_code != 200:
-        raise Exception(response.text)
+        raise Exception(f"Gemini API error {response.status_code}: {response.text}")
 
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
