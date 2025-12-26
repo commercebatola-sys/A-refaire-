@@ -1,8 +1,32 @@
-streamlit
+# API OpenAI
+openai
+
+# Lecture et extraction PDF
 PyMuPDF
+pdfplumber
+python-magic
+
+# Gestion des variables d'environnement
 python-dotenv
-IPython
+
+# Notebook / développement interactif
+ipython
 jupyter
 jupyterlab
 ipykernel
-openai
+
+# Application web Streamlit
+streamlit
+streamlit-aggrid
+
+# Analyse de données
+pandas
+numpy
+
+# Graphiques et dashboards
+plotly
+matplotlib
+seaborn
+
+# Requêtes HTTP / APIs externes
+requests
