@@ -1,4 +1,8 @@
 streamlit
 PyMuPDF
 python-dotenv
-google-generativeai
+IPython
+jupyter
+jupyterlab
+ipykernel
+openai
