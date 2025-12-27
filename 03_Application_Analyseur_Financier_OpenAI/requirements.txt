@@ -1,35 +1,14 @@
-# OpenAI API
-openai
+# Application web
+streamlit>=1.32.0
 
-# DeepSeek SDK
-deepseek
+# API OpenAI (nouveau SDK officiel)
+openai>=1.30.0
 
 # Lecture et extraction PDF
-PyMuPDF
-pdfplumber
-python-magic
+PyMuPDF>=1.23.0
 
 # Gestion des variables d'environnement
-python-dotenv
+python-dotenv>=1.0.1
 
-# Application web Streamlit
-streamlit
-streamlit-aggrid
-
-# Analyse de données
-pandas
-numpy
-
-# Graphiques et dashboards
-plotly
-matplotlib
-seaborn
-
-# Notebook / développement interactif
-ipython
-jupyter
-jupyterlab
-ipykernel
-
-# Requêtes HTTP / APIs externes
-requests
+# Utilitaires Python (inclus par défaut mais sécurisés)
+regex
