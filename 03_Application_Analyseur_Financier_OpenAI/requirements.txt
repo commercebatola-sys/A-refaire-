@@ -1,14 +1,34 @@
-# Application web
-streamlit>=1.32.0
+# ===== Application Web =====
+streamlit
 
-# API OpenAI (nouveau SDK officiel)
-openai>=1.30.0
+# ===== API OpenAI =====
+openai
 
-# Lecture et extraction PDF
-PyMuPDF>=1.23.0
+# ===== Lecture & extraction PDF =====
+PyMuPDF
+pdfplumber
+python-magic
 
-# Gestion des variables d'environnement
-python-dotenv>=1.0.1
+# ===== Gestion des variables d'environnement =====
+python-dotenv
 
-# Utilitaires Python (inclus par défaut mais sécurisés)
-regex
+# ===== Analyse de données =====
+pandas
+numpy
+
+# ===== Visualisation =====
+plotly
+matplotlib
+seaborn
+
+# ===== UI avancée Streamlit =====
+streamlit-aggrid
+
+# ===== Requêtes HTTP / APIs =====
+requests
+
+# ===== Environnement de développement =====
+IPython
+jupyter
+jupyterlab
+ipykernel
