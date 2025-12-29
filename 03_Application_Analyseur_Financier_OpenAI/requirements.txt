@@ -1,47 +1,15 @@
-# ==============================
-# Application Web
-# ==============================
-streamlit
+# ===== Application Web =====
+streamlit>=1.32.0
 
-# ==============================
-# Requêtes HTTP / API IA (Grok)
-# ==============================
-requests
+# ===== Lecture & extraction PDF =====
+PyMuPDF>=1.23.0
 
-# ==============================
-# Lecture & extraction PDF
-# ==============================
-PyMuPDF
-pdfplumber
-python-magic
+# ===== Gestion des variables d'environnement =====
+python-dotenv>=1.0.0
 
-# ==============================
-# Gestion des variables d'environnement
-# ==============================
-python-dotenv
+# ===== Utilitaires système =====
+requests>=2.31.0
 
-# ==============================
-# Analyse de données
-# ==============================
-pandas
-numpy
-
-# ==============================
-# Visualisation (évolutions futures)
-# ==============================
-plotly
-matplotlib
-seaborn
-
-# ==============================
-# UI avancée Streamlit (optionnel / futur)
-# ==============================
-streamlit-aggrid
-
-# ==============================
-# Environnement de développement
-# ==============================
-IPython
-jupyter
-jupyterlab
-ipykernel
+# ===== Analyse & traitement de données =====
+pandas>=2.0.0
+numpy>=1.26.0
