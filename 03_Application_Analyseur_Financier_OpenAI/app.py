@@ -1,12 +1,12 @@
 import streamlit as st
 import os
 import fitz  # PyMuPDF
-from dotenv import load_dotenv, find_dotenv
-from openai import OpenAI
 import tempfile
 import re
+from dotenv import load_dotenv, find_dotenv
+import requests  # pour appeler Grok API
 
-# Configuration de la page
+# --- Configuration page ---
 st.set_page_config(
     page_title="Analyse de Documents Financiers",
     page_icon="📊",
@@ -14,40 +14,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.title("📊 Analyse Automatique de Documents Financiers")
-st.markdown("Transformez vos rapports financiers en résumés structurés grâce à l'IA générative")
+st.title("📊 Analyse Automatique de Documents Financiers avec Grok")
+st.markdown("Transformez vos rapports financiers en résumés structurés grâce à l'IA Grok")
 
-# Sidebar configuration
+# --- Sidebar ---
 with st.sidebar:
     st.header("⚙️ Configuration")
     env_path = find_dotenv(filename=".env", usecwd=True)
     load_dotenv(dotenv_path=env_path, override=True)
     
-    st.subheader("🔑 Clé API OpenAI")
-    default_api_key = os.getenv("OPENAI_API_KEY", "")
-    if 'openai_api_key' not in st.session_state:
-        st.session_state.openai_api_key = default_api_key
+    st.subheader("🔑 Clé API Grok")
+    default_api_key = os.getenv("GROK_API_KEY", "")
+    if 'grok_api_key' not in st.session_state:
+        st.session_state.grok_api_key = default_api_key
     
     api_key = st.text_input(
-        "Clé API OpenAI",
-        value=st.session_state.openai_api_key,
+        "Clé API Grok",
+        value=st.session_state.grok_api_key,
         type="password",
-        placeholder="sk-...",
-        help="Entrez votre clé API OpenAI. Elle sera sauvegardée pour cette session."
+        placeholder="grok-...",
+        help="Entrez votre clé API Grok"
     )
     
-    if api_key != st.session_state.openai_api_key:
-        st.session_state.openai_api_key = api_key
+    if api_key != st.session_state.grok_api_key:
+        st.session_state.grok_api_key = api_key
         st.success("✅ Clé API mise à jour !")
     
     if not api_key:
-        st.error("❌ Veuillez entrer votre clé API OpenAI")
-        st.info("Vous pouvez obtenir une clé sur : https://platform.openai.com/api-keys")
+        st.error("❌ Veuillez entrer votre clé API Grok")
         st.stop()
     else:
         st.success(f"✅ API Key configurée: {api_key[:8]}...")
     
-    model = st.selectbox("Modèle OpenAI", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"], index=0)
     max_length = st.slider("Longueur maximale du texte (caractères)", 50000, 200000, 120000, step=10000)
     
     st.markdown("---")
@@ -56,8 +54,7 @@ with st.sidebar:
     st.markdown("2. Obtenez un résumé structuré avec audit")
     st.markdown("3. Posez des questions spécifiques")
 
-
-# --- Extraction du texte PDF ---
+# --- Extraction PDF ---
 def extract_pdf_text(pdf_file, max_length=120000):
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
@@ -67,13 +64,12 @@ def extract_pdf_text(pdf_file, max_length=120000):
         pdf = fitz.open(tmp_path)
         text = ""
         for i, page in enumerate(pdf, start=1):
-            page_text = page.get_text()
-            text += f"\n\n=== [PAGE {i}] ===\n" + page_text.strip()
+            text += f"\n\n=== [PAGE {i}] ===\n" + page.get_text().strip()
         
         text = "\n".join(line.strip() for line in text.splitlines())
         if len(text) > max_length:
             text = text[:max_length]
-            st.warning(f"⚠️ Le texte a été tronqué à {max_length} caractères pour éviter les dépassements d'API")
+            st.warning(f"⚠️ Le texte a été tronqué à {max_length} caractères")
         
         os.unlink(tmp_path)
         return text, len(text)
@@ -81,8 +77,7 @@ def extract_pdf_text(pdf_file, max_length=120000):
         st.error(f"❌ Erreur lors de la lecture du PDF: {str(e)}")
         return None, 0
 
-
-# --- Extraction automatique des chiffres ---
+# --- Extraction chiffres ---
 def extract_numbers(text):
     numbers = {"CA": [], "Résultat net": [], "Marge": [], "Dette": [], "Trésorerie": []}
     pages = re.findall(r"=== \[PAGE (\d+)\] ===\n(.*?)(?=== \[PAGE|\Z)", text, re.DOTALL)
@@ -94,21 +89,17 @@ def extract_numbers(text):
                 numbers[key].append((value, page_num))
     return numbers
 
-
 # --- Audit financier ---
 def audit_financier(numbers):
     audit_text = "🔎 Audit & Alertes de cohérence\n\n"
     issues = []
 
-    # Exemple simple de vérification
     ca_list = [float(re.sub(r"[^\d.]", "", val)) for val, _ in numbers["CA"] if re.sub(r"[^\d.]", "", val)]
     rn_list = [float(re.sub(r"[^\d.]", "", val)) for val, _ in numbers["Résultat net"] if re.sub(r"[^\d.]", "", val)]
     
-    if ca_list and rn_list:
-        if ca_list[-1] > ca_list[0] and rn_list[-1] < rn_list[0]:
-            issues.append(f"⚠️ Incohérence : CA ↑ mais Résultat net ↓ (pages {numbers['CA'][-1][1]} & {numbers['Résultat net'][-1][1]})")
+    if ca_list and rn_list and ca_list[-1] > ca_list[0] and rn_list[-1] < rn_list[0]:
+        issues.append(f"⚠️ Incohérence : CA ↑ mais Résultat net ↓ (pages {numbers['CA'][-1][1]} & {numbers['Résultat net'][-1][1]})")
     
-    # Autres vérifications
     if numbers["Marge"]:
         issues.append(f"🔵 Marge identifiée : {numbers['Marge'][-1][0]}% (page {numbers['Marge'][-1][1]})")
     if numbers["Dette"] and numbers["Trésorerie"]:
@@ -122,79 +113,57 @@ def audit_financier(numbers):
 
     return audit_text
 
-
-# --- Génération du résumé avec audit ---
-def generate_summary(text, model="gpt-4o-mini"):
-    api_key = st.session_state.get('openai_api_key')
+# --- Fonction pour appeler Grok ---
+def grok_generate(text, instruction, max_tokens=2000):
+    api_key = st.session_state.get('grok_api_key')
     if not api_key:
-        st.error("❌ Clé API non configurée")
+        st.error("❌ Clé API Grok non configurée")
         return None
-
-    instructions = (
-        "Tu es un assistant IA hybride : analyste financier, consultant business et auditeur senior. "
-        "Lis ce document financier et fournis : résumé exécutif, tableau des chiffres clés, analyse des performances, structure financière, risques et guidance. "
-        "Si l'information est absente, indique 'non précisé'. "
-        "Sépare les sections Markdown : 🟢 Données factuelles, 🔵 Analyse & interprétation IA, 🟣 Recommandations."
-    )
+    
+    url = "https://api.grok.com/v1/generate"  # exemple URL Grok
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {
+        "prompt": instruction + "\n\n" + text,
+        "max_tokens": max_tokens,
+        "temperature": 0.1
+    }
     
     try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": instructions},
-                {"role": "user", "content": text}
-            ],
-            max_tokens=2000,
-            temperature=0.1
-        )
-        summary = response.choices[0].message.content
-        # Générer l'audit
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json().get("text", "")
+    except Exception as e:
+        st.error(f"❌ Erreur API Grok : {str(e)}")
+        return None
+
+# --- Génération résumé avec audit ---
+def generate_summary(text):
+    instruction = (
+        "Tu es un assistant IA hybride : analyste financier, consultant business et auditeur senior. "
+        "Lis ce document et fournis : résumé exécutif, tableau chiffres clés, analyse performances, structure financière, risques et recommandations. "
+        "Sépare en Markdown : 🟢 Données factuelles, 🔵 Analyse IA, 🟣 Recommandations."
+    )
+    summary = grok_generate(text, instruction)
+    if summary:
         numbers = extract_numbers(text)
         audit = audit_financier(numbers)
         return summary + "\n\n" + audit
-    except Exception as e:
-        st.error(f"❌ Erreur lors de la génération du résumé: {str(e)}")
-        return None
+    return None
 
-
-# --- Réponse aux questions avec audit automatique ---
-def answer_question(text, question, model="gpt-4o"):
-    api_key = st.session_state.get('openai_api_key')
-    if not api_key:
-        st.error("❌ Clé API non configurée")
-        return None
-
-    instructions = (
+# --- Réponse à questions ---
+def answer_question(text, question):
+    instruction = (
         "Tu es un assistant IA hybride : analyste financier, consultant business et auditeur senior. "
-        "Lis le texte, extrais les chiffres clés, identifie risques et stratégie, cite les pages si possible. "
-        "Ne jamais inventer de données. "
-        "Si la question concerne performance, rentabilité, évolution ou solidité financière, applique automatiquement le Mode Audit. "
-        "Réponds clairement et distingue : 🟢 Faits PDF, 🔵 Analyse IA, 🟣 Recommandations."
+        "Réponds à la question en citant les chiffres clés et pages si possible. "
+        "Si question concerne performance, rentabilité, évolution ou solidité, applique Mode Audit."
+        "Sépare en Markdown : 🟢 Faits PDF, 🔵 Analyse IA, 🟣 Recommandations."
     )
-
-    try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": instructions},
-                {"role": "user", "content": f"Question : {question}\n\nTexte PDF :\n{text}"}
-            ],
-            max_tokens=1000,
-            temperature=0.1
-        )
-        answer = response.choices[0].message.content
-        # Ajouter audit si nécessaire
-        if any(word in question.lower() for word in ["performance", "rentabilité", "évolution", "risques", "solidité"]):
-            numbers = extract_numbers(text)
-            audit = audit_financier(numbers)
-            return answer + "\n\n" + audit
-        return answer
-    except Exception as e:
-        st.error(f"❌ Erreur lors de la réponse à la question: {str(e)}")
-        return None
-
+    answer = grok_generate(f"Question : {question}\n\nTexte PDF :\n{text}", instruction)
+    if any(word in question.lower() for word in ["performance", "rentabilité", "évolution", "risques", "solidité"]):
+        numbers = extract_numbers(text)
+        audit = audit_financier(numbers)
+        return answer + "\n\n" + audit
+    return answer
 
 # --- Interface principale ---
 def main():
@@ -202,14 +171,14 @@ def main():
     
     with tab1:
         st.header("📄 Upload et Analyse du PDF")
-        uploaded_file = st.file_uploader("Choisissez votre document financier (PDF)", type=['pdf'])
+        uploaded_file = st.file_uploader("Choisissez votre PDF", type=['pdf'])
         
         if uploaded_file:
-            file_details = {"Nom": uploaded_file.name, "Taille": f"{uploaded_file.size/1024:.1f} KB", "Type": uploaded_file.type}
+            file_details = {"Nom": uploaded_file.name, "Taille": f"{uploaded_file.size/1024:.1f} KB"}
             st.json(file_details)
             
             if st.button("🚀 Analyser le document"):
-                with st.spinner("📖 Extraction du texte en cours..."):
+                with st.spinner("📖 Extraction du texte..."):
                     text, text_length = extract_pdf_text(uploaded_file, max_length)
                 
                 if text:
@@ -218,7 +187,7 @@ def main():
                         st.text(text[:1000] + "..." if len(text) > 1000 else text)
                     
                     with st.spinner("🤖 Génération du résumé et audit..."):
-                        summary = generate_summary(text, model)
+                        summary = generate_summary(text)
                     
                     if summary:
                         st.success("✅ Résumé et audit générés !")
@@ -229,51 +198,26 @@ def main():
                         st.download_button("💾 Télécharger le résumé", data=summary, file_name=f"resume_{uploaded_file.name.replace('.pdf','')}.md", mime="text/markdown")
                     else:
                         st.error("❌ Échec de la génération du résumé")
-                else:
-                    st.error("❌ Échec de l'extraction du texte")
-    
+
     with tab2:
         st.header("❓ Questions sur le Document")
         if 'pdf_text' not in st.session_state:
-            st.info("ℹ️ Analysez d'abord un document dans l'onglet 'Upload & Analyse'")
+            st.info("ℹ️ Analysez d'abord un document")
         else:
-            question = st.text_input("Posez votre question sur le document :", placeholder="Ex: Quel est le chiffre d'affaires ?")
-            if question:
-                if st.button("🔍 Rechercher la réponse"):
-                    with st.spinner("🤖 Recherche en cours..."):
-                        answer = answer_question(st.session_state['pdf_text'], question, model)
-                    if answer:
-                        st.success("✅ Réponse trouvée !")
-                        st.markdown("**Question :** " + question)
-                        st.markdown("**Réponse :**")
-                        st.markdown(answer)
-                    else:
-                        st.error("❌ Échec de la recherche de réponse")
-            
-            st.subheader("💡 Questions suggérées")
-            suggested_questions = [
-                "Quel est le chiffre d'affaires ?",
-                "Quelle est la marge nette ?",
-                "Quels sont les principaux risques identifiés ?",
-                "Quelle est la dette nette ?",
-                "Quel est le cash flow opérationnel ?"
-            ]
-            for i, q in enumerate(suggested_questions):
-                if st.button(f"❓ {q}", key=f"suggested_{i}"):
-                    with st.spinner("🤖 Recherche en cours..."):
-                        answer = answer_question(st.session_state['pdf_text'], q, model)
-                    if answer:
-                        st.success("✅ Réponse trouvée !")
-                        st.markdown("**Question :** " + q)
-                        st.markdown("**Réponse :**")
-                        st.markdown(answer)
-                    else:
-                        st.error("❌ Échec de la recherche de réponse")
-
+            question = st.text_input("Posez votre question :", placeholder="Ex: Quel est le chiffre d'affaires ?")
+            if question and st.button("🔍 Rechercher la réponse"):
+                with st.spinner("🤖 Recherche en cours..."):
+                    answer = answer_question(st.session_state['pdf_text'], question)
+                if answer:
+                    st.success("✅ Réponse trouvée !")
+                    st.markdown("**Question :** " + question)
+                    st.markdown("**Réponse :**")
+                    st.markdown(answer)
+                else:
+                    st.error("❌ Échec de la recherche de réponse")
 
 st.markdown("---")
-st.markdown("**Note :** Vérifiez toujours les chiffres et pages d'origine. En cas d'ambiguïté, utilisez 'non précisé'.")
+st.markdown("**Note :** Vérifiez toujours les chiffres et pages d'origine.")
 
 if __name__ == "__main__":
     main()
-               
