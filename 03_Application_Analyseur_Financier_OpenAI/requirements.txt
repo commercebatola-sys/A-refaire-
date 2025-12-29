@@ -1,33 +1,46 @@
-# ===== Application Web =====
+# ==============================
+# Application Web
+# ==============================
 streamlit
 
-# ===== API OpenAI =====
-openai
+# ==============================
+# Requêtes HTTP / API IA (Grok)
+# ==============================
+requests
 
-# ===== Lecture & extraction PDF =====
+# ==============================
+# Lecture & extraction PDF
+# ==============================
 PyMuPDF
 pdfplumber
 python-magic
 
-# ===== Gestion des variables d'environnement =====
+# ==============================
+# Gestion des variables d'environnement
+# ==============================
 python-dotenv
 
-# ===== Analyse de données =====
+# ==============================
+# Analyse de données
+# ==============================
 pandas
 numpy
 
-# ===== Visualisation =====
+# ==============================
+# Visualisation (évolutions futures)
+# ==============================
 plotly
 matplotlib
 seaborn
 
-# ===== UI avancée Streamlit =====
+# ==============================
+# UI avancée Streamlit (optionnel / futur)
+# ==============================
 streamlit-aggrid
 
-# ===== Requêtes HTTP / APIs =====
-requests
-
-# ===== Environnement de développement =====
+# ==============================
+# Environnement de développement
+# ==============================
 IPython
 jupyter
 jupyterlab
